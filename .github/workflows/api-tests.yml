@@ -23,8 +23,8 @@ jobs:
     env:
       NEWMAN_ENV: ci
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -38,14 +38,14 @@ jobs:
         run: cp pages/index.html reports/index.html
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: newman-reports
           path: reports/
           retention-days: 14
       - name: Upload Pages artifact
         if: always()
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: reports
 
