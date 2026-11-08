@@ -1,0 +1,35 @@
+{
+  "name": "api-testing-postman-newman",
+  "version": "1.0.0",
+  "description": "Postman collections and Newman runs for the Restful Booker and Automation Exercise APIs",
+  "scripts": {
+    "build": "node src/build-collections.js && node scripts/build-test-case-doc.js",
+    "test": "npm run build && node scripts/run-newman.js",
+    "test:booker": "node scripts/run-newman.js restful-booker",
+    "test:ae": "node scripts/run-newman.js automation-exercise",
+    "test:data": "node scripts/run-newman.js data-driven",
+    "lint": "eslint . && prettier --check \"src/**/*.js\" \"scripts/**/*.js\"",
+    "format": "prettier --write \"src/**/*.js\" \"scripts/**/*.js\"",
+    "build:docs": "node scripts/build-test-case-doc.js",
+    "evidence": "node scripts/capture-evidence.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-sudipta/api-testing-postman-newman.git"
+  },
+  "author": "Sudipta Kumar Das",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/the-sudipta/api-testing-postman-newman/issues"
+  },
+  "homepage": "https://github.com/the-sudipta/api-testing-postman-newman#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "newman": "^6.2.3",
+    "newman-reporter-htmlextra": "^1.23.1",
+    "prettier": "^3.9.10"
+  },
+  "private": true
+}
