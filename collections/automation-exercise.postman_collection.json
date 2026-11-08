@@ -1,0 +1,1097 @@
+{
+  "info": {
+    "name": "Automation Exercise API",
+    "description": "Catalogue and account lifecycle tests for the documented API list at https://automationexercise.com/api_list",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Catalogue",
+      "description": "Products, brands and search (APIs 1-6).",
+      "item": [
+        {
+          "name": "API 1 - Get all products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 and responseCode 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().responseCode).to.eql(200);",
+                  "});",
+                  "pm.test('Product list matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeProductsSchema')));",
+                  "});",
+                  "pm.test('Product IDs are unique', function () {",
+                  "  const ids = pm.response.json().products.map(function (p) {",
+                  "    return p.id;",
+                  "  });",
+                  "  pm.expect(new Set(ids).size).to.eql(ids.length);",
+                  "});",
+                  "pm.test('[F-14] Known issue: JSON is served as text/html', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/productsList",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "productsList"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 2 - POST to productsList is not supported",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 405 with the documented message', function () {",
+                  "  pm.expect(body.responseCode).to.eql(405);",
+                  "  pm.expect(body.message).to.eql('This request method is not supported.');",
+                  "});",
+                  "pm.test('[F-13] Known issue: HTTP status is 200 although the body says 405', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/productsList",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "productsList"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 3 - Get all brands",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const brands = pm.response.json().brands;",
+                  "pm.test('Brand list matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeBrandsSchema')));",
+                  "});",
+                  "pm.test('[F-15] Known issue: the same brand name appears under several IDs', function () {",
+                  "  const names = brands.map(function (b) {",
+                  "    return b.brand;",
+                  "  });",
+                  "  pm.expect(new Set(names).size).to.be.below(names.length);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/brandsList",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "brandsList"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 4 - PUT to brandsList is not supported",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 405 with the documented message', function () {",
+                  "  pm.expect(body.responseCode).to.eql(405);",
+                  "  pm.expect(body.message).to.eql('This request method is not supported.');",
+                  "});",
+                  "pm.test('[F-13] Known issue: HTTP status is 200 although the body says 405', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/brandsList",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "brandsList"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 5 - Search product \"top\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json().products;",
+                  "pm.test('responseCode 200 and at least one product', function () {",
+                  "  pm.expect(pm.response.json().responseCode).to.eql(200);",
+                  "  pm.expect(products).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test('Every result relates to \"top\" (name or category)', function () {",
+                  "  products.forEach(function (p) {",
+                  "    const text = (p.name + ' ' + p.category.category).toLowerCase();",
+                  "    pm.expect(text).to.include('top');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "search_product",
+                  "value": "top",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/searchProduct",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "searchProduct"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search product with no match",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responseCode 200 and an empty list', function () {",
+                  "  pm.expect(pm.response.json().responseCode).to.eql(200);",
+                  "  pm.expect(pm.response.json().products).to.eql([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "search_product",
+                  "value": "zzzqqq",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/searchProduct",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "searchProduct"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 6 - Search product without parameter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Body responseCode 400 with a clear message', function () {",
+                  "  pm.expect(pm.response.json().responseCode).to.eql(400);",
+                  "  pm.expect(pm.response.json().message).to.include('search_product parameter is missing');",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/searchProduct",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "searchProduct"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account lifecycle",
+      "description": "Create -> duplicate -> login -> update -> read -> delete (APIs 7-14).",
+      "item": [
+        {
+          "name": "API 11 - Create account",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('aeEmail', 'qa.portfolio.' + Date.now() + '@example.com');",
+                  "pm.environment.set('aePassword', 'Test@' + Math.floor(1000 + Math.random() * 9000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 201', function () {",
+                  "  pm.expect(body.responseCode).to.eql(201);",
+                  "});",
+                  "pm.test('Message is \"User created!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"User created!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Tanvir",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Mr",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_date",
+                  "value": "10",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_month",
+                  "value": "May",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_year",
+                  "value": "1998",
+                  "type": "text"
+                },
+                {
+                  "key": "firstname",
+                  "value": "Tanvir",
+                  "type": "text"
+                },
+                {
+                  "key": "lastname",
+                  "value": "Ahmed",
+                  "type": "text"
+                },
+                {
+                  "key": "company",
+                  "value": "QA Practice",
+                  "type": "text"
+                },
+                {
+                  "key": "address1",
+                  "value": "House 12, Road 5",
+                  "type": "text"
+                },
+                {
+                  "key": "address2",
+                  "value": "Dhanmondi",
+                  "type": "text"
+                },
+                {
+                  "key": "country",
+                  "value": "India",
+                  "type": "text"
+                },
+                {
+                  "key": "zipcode",
+                  "value": "1207",
+                  "type": "text"
+                },
+                {
+                  "key": "state",
+                  "value": "Dhaka",
+                  "type": "text"
+                },
+                {
+                  "key": "city",
+                  "value": "Dhaka",
+                  "type": "text"
+                },
+                {
+                  "key": "mobile_number",
+                  "value": "01712345678",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/createAccount",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "createAccount"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create account with an existing email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 400', function () {",
+                  "  pm.expect(body.responseCode).to.eql(400);",
+                  "});",
+                  "pm.test('Message is \"Email already exists!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"Email already exists!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Tanvir",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Mr",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_date",
+                  "value": "10",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_month",
+                  "value": "May",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_year",
+                  "value": "1998",
+                  "type": "text"
+                },
+                {
+                  "key": "firstname",
+                  "value": "Tanvir",
+                  "type": "text"
+                },
+                {
+                  "key": "lastname",
+                  "value": "Ahmed",
+                  "type": "text"
+                },
+                {
+                  "key": "company",
+                  "value": "QA Practice",
+                  "type": "text"
+                },
+                {
+                  "key": "address1",
+                  "value": "House 12, Road 5",
+                  "type": "text"
+                },
+                {
+                  "key": "address2",
+                  "value": "Dhanmondi",
+                  "type": "text"
+                },
+                {
+                  "key": "country",
+                  "value": "India",
+                  "type": "text"
+                },
+                {
+                  "key": "zipcode",
+                  "value": "1207",
+                  "type": "text"
+                },
+                {
+                  "key": "state",
+                  "value": "Dhaka",
+                  "type": "text"
+                },
+                {
+                  "key": "city",
+                  "value": "Dhaka",
+                  "type": "text"
+                },
+                {
+                  "key": "mobile_number",
+                  "value": "01712345678",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/createAccount",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "createAccount"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 7 - Verify login with valid details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 200', function () {",
+                  "  pm.expect(body.responseCode).to.eql(200);",
+                  "});",
+                  "pm.test('Message is \"User exists!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"User exists!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/verifyLogin",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "verifyLogin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 8 - Verify login without email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 400', function () {",
+                  "  pm.expect(body.responseCode).to.eql(400);",
+                  "});",
+                  "pm.test('Message is \"Bad request, email or password parameter is missing in POST request.\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"Bad request, email or password parameter is missing in POST request.\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/verifyLogin",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "verifyLogin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 9 - DELETE to verifyLogin is not supported",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 405', function () {",
+                  "  pm.expect(body.responseCode).to.eql(405);",
+                  "});",
+                  "pm.test('Message is \"This request method is not supported.\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"This request method is not supported.\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/verifyLogin",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "verifyLogin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 10 - Verify login with invalid details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 404', function () {",
+                  "  pm.expect(body.responseCode).to.eql(404);",
+                  "});",
+                  "pm.test('Message is \"User not found!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"User not found!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "nobody.qa.portfolio@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Wrong@123",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/verifyLogin",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "verifyLogin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 13 - Update account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 200', function () {",
+                  "  pm.expect(body.responseCode).to.eql(200);",
+                  "});",
+                  "pm.test('Message is \"User updated!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"User updated!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Tanvir",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Mr",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_date",
+                  "value": "10",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_month",
+                  "value": "May",
+                  "type": "text"
+                },
+                {
+                  "key": "birth_year",
+                  "value": "1998",
+                  "type": "text"
+                },
+                {
+                  "key": "firstname",
+                  "value": "Tanvir",
+                  "type": "text"
+                },
+                {
+                  "key": "lastname",
+                  "value": "Ahmed",
+                  "type": "text"
+                },
+                {
+                  "key": "company",
+                  "value": "QA Practice",
+                  "type": "text"
+                },
+                {
+                  "key": "address1",
+                  "value": "House 12, Road 5",
+                  "type": "text"
+                },
+                {
+                  "key": "address2",
+                  "value": "Dhanmondi",
+                  "type": "text"
+                },
+                {
+                  "key": "country",
+                  "value": "India",
+                  "type": "text"
+                },
+                {
+                  "key": "zipcode",
+                  "value": "1207",
+                  "type": "text"
+                },
+                {
+                  "key": "state",
+                  "value": "Dhaka",
+                  "type": "text"
+                },
+                {
+                  "key": "city",
+                  "value": "Chattogram",
+                  "type": "text"
+                },
+                {
+                  "key": "mobile_number",
+                  "value": "01712345678",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/updateAccount",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "updateAccount"
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 14 - Get user detail by email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const user = pm.response.json().user;",
+                  "pm.test('responseCode 200 and the updated city', function () {",
+                  "  pm.expect(pm.response.json().responseCode).to.eql(200);",
+                  "  pm.expect(user.email).to.eql(pm.environment.get('aeEmail'));",
+                  "  pm.expect(user.city).to.eql('Chattogram');",
+                  "});",
+                  "pm.test('[F-16] Known issue: response uses first_name/birth_day while requests use firstname/birth_date', function () {",
+                  "  pm.expect(user).to.have.property('first_name');",
+                  "  pm.expect(user).to.not.have.property('firstname');",
+                  "  pm.expect(user).to.have.property('birth_day');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/getUserDetailByEmail?email={{aeEmail}}",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "getUserDetailByEmail"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "API 12 - Delete account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 200', function () {",
+                  "  pm.expect(body.responseCode).to.eql(200);",
+                  "});",
+                  "pm.test('Message is \"Account deleted!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"Account deleted!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/deleteAccount",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "deleteAccount"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete the same account again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 404', function () {",
+                  "  pm.expect(body.responseCode).to.eql(404);",
+                  "});",
+                  "pm.test('Message is \"Account not found!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"Account not found!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "{{aeEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{aePassword}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{aeBaseUrl}}/deleteAccount",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "deleteAccount"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get user detail for unknown email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Body responseCode is 404', function () {",
+                  "  pm.expect(body.responseCode).to.eql(404);",
+                  "});",
+                  "pm.test('Message is \"Account not found with this email, try another email!\"', function () {",
+                  "  pm.expect(body.message).to.eql(\"Account not found with this email, try another email!\");",
+                  "});",
+                  "pm.test('Message response matches the schema', function () {",
+                  "  pm.response.to.have.jsonSchema(JSON.parse(pm.collectionVariables.get('aeMessageSchema')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{aeBaseUrl}}/getUserDetailByEmail?email=nobody.qa.portfolio@example.com",
+              "host": [
+                "{{aeBaseUrl}}"
+              ],
+              "path": [
+                "getUserDetailByEmail"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "nobody.qa.portfolio@example.com"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "/* global pm */",
+          "pm.test('Response time is below ' + pm.environment.get('maxResponseTime') + ' ms', function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(Number(pm.environment.get('maxResponseTime')));",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "bookingSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Booking\",\"type\":\"object\",\"required\":[\"firstname\",\"lastname\",\"totalprice\",\"depositpaid\",\"bookingdates\"],\"additionalProperties\":false,\"properties\":{\"firstname\":{\"type\":\"string\",\"minLength\":1},\"lastname\":{\"type\":\"string\",\"minLength\":1},\"totalprice\":{\"type\":\"integer\"},\"depositpaid\":{\"type\":\"boolean\"},\"bookingdates\":{\"type\":\"object\",\"required\":[\"checkin\",\"checkout\"],\"additionalProperties\":false,\"properties\":{\"checkin\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"},\"checkout\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"}}},\"additionalneeds\":{\"type\":\"string\"}}}",
+      "type": "string"
+    },
+    {
+      "key": "createdBookingSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Created booking\",\"type\":\"object\",\"required\":[\"bookingid\",\"booking\"],\"additionalProperties\":false,\"properties\":{\"bookingid\":{\"type\":\"integer\",\"minimum\":1},\"booking\":{\"$ref\":\"#/definitions/booking\"}},\"definitions\":{\"booking\":{\"title\":\"Booking\",\"type\":\"object\",\"required\":[\"firstname\",\"lastname\",\"totalprice\",\"depositpaid\",\"bookingdates\"],\"additionalProperties\":false,\"properties\":{\"firstname\":{\"type\":\"string\",\"minLength\":1},\"lastname\":{\"type\":\"string\",\"minLength\":1},\"totalprice\":{\"type\":\"integer\"},\"depositpaid\":{\"type\":\"boolean\"},\"bookingdates\":{\"type\":\"object\",\"required\":[\"checkin\",\"checkout\"],\"additionalProperties\":false,\"properties\":{\"checkin\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"},\"checkout\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"}}},\"additionalneeds\":{\"type\":\"string\"}}}}}",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdsSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Booking ID list\",\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"bookingid\"],\"additionalProperties\":false,\"properties\":{\"bookingid\":{\"type\":\"integer\"}}}}",
+      "type": "string"
+    },
+    {
+      "key": "tokenSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Auth token\",\"type\":\"object\",\"required\":[\"token\"],\"additionalProperties\":false,\"properties\":{\"token\":{\"type\":\"string\",\"pattern\":\"^[a-f0-9]{15}$\"}}}",
+      "type": "string"
+    },
+    {
+      "key": "aeProductsSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Automation Exercise product list\",\"type\":\"object\",\"required\":[\"responseCode\",\"products\"],\"properties\":{\"responseCode\":{\"const\":200},\"products\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"type\":\"object\",\"required\":[\"id\",\"name\",\"price\",\"brand\",\"category\"],\"properties\":{\"id\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\",\"minLength\":1},\"price\":{\"type\":\"string\",\"pattern\":\"^Rs\\\\. \\\\d+$\"},\"brand\":{\"type\":\"string\",\"minLength\":1},\"category\":{\"type\":\"object\",\"required\":[\"usertype\",\"category\"],\"properties\":{\"usertype\":{\"type\":\"object\",\"required\":[\"usertype\"]},\"category\":{\"type\":\"string\"}}}}}}}}",
+      "type": "string"
+    },
+    {
+      "key": "aeBrandsSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Automation Exercise brand list\",\"type\":\"object\",\"required\":[\"responseCode\",\"brands\"],\"properties\":{\"responseCode\":{\"const\":200},\"brands\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"type\":\"object\",\"required\":[\"id\",\"brand\"],\"properties\":{\"id\":{\"type\":\"integer\"},\"brand\":{\"type\":\"string\",\"minLength\":1}}}}}}",
+      "type": "string"
+    },
+    {
+      "key": "aeMessageSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Automation Exercise message response\",\"type\":\"object\",\"required\":[\"responseCode\",\"message\"],\"additionalProperties\":false,\"properties\":{\"responseCode\":{\"type\":\"integer\"},\"message\":{\"type\":\"string\",\"minLength\":1}}}",
+      "type": "string"
+    }
+  ]
+}
