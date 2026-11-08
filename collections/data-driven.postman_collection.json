@@ -1,0 +1,243 @@
+{
+  "info": {
+    "name": "Restful Booker - data-driven bookings",
+    "description": "Run with -d data/bookings.csv",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Data-driven bookings",
+      "description": "Create, read and delete one booking per CSV row.",
+      "item": [
+        {
+          "name": "Create booking from data row",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const booking = pm.response.json().booking;",
+                  "pm.test('Row ' + pm.info.iteration + ': status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Row ' + pm.info.iteration + ': stored values equal the data row', function () {",
+                  "  pm.expect(booking.firstname).to.eql(pm.iterationData.get('firstname'));",
+                  "  pm.expect(booking.lastname).to.eql(pm.iterationData.get('lastname'));",
+                  "  pm.expect(booking.totalprice).to.eql(Number(pm.iterationData.get('totalprice')));",
+                  "  pm.expect(booking.depositpaid).to.eql(String(pm.iterationData.get('depositpaid')) === 'true');",
+                  "  pm.expect(booking.bookingdates).to.eql({ checkin: pm.iterationData.get('checkin'), checkout: pm.iterationData.get('checkout') });",
+                  "  pm.expect(booking.additionalneeds).to.eql(pm.iterationData.get('additionalneeds'));",
+                  "});",
+                  "pm.environment.set('rowBookingId', pm.response.json().bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstname\": \"{{firstname}}\",\n  \"lastname\": \"{{lastname}}\",\n  \"totalprice\": {{totalprice}},\n  \"depositpaid\": {{depositpaid}},\n  \"bookingdates\": { \"checkin\": \"{{checkin}}\", \"checkout\": \"{{checkout}}\" },\n  \"additionalneeds\": \"{{additionalneeds}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Read booking back",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Row ' + pm.info.iteration + ': booking can be read back with the same name', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().firstname).to.eql(pm.iterationData.get('firstname'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{rowBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{rowBookingId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('token', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Row ' + pm.info.iteration + ': booking deleted (201)', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{rowBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{rowBookingId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "/* global pm */",
+          "pm.test('Response time is below ' + pm.environment.get('maxResponseTime') + ' ms', function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(Number(pm.environment.get('maxResponseTime')));",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "bookingSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Booking\",\"type\":\"object\",\"required\":[\"firstname\",\"lastname\",\"totalprice\",\"depositpaid\",\"bookingdates\"],\"additionalProperties\":false,\"properties\":{\"firstname\":{\"type\":\"string\",\"minLength\":1},\"lastname\":{\"type\":\"string\",\"minLength\":1},\"totalprice\":{\"type\":\"integer\"},\"depositpaid\":{\"type\":\"boolean\"},\"bookingdates\":{\"type\":\"object\",\"required\":[\"checkin\",\"checkout\"],\"additionalProperties\":false,\"properties\":{\"checkin\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"},\"checkout\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"}}},\"additionalneeds\":{\"type\":\"string\"}}}",
+      "type": "string"
+    },
+    {
+      "key": "createdBookingSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Created booking\",\"type\":\"object\",\"required\":[\"bookingid\",\"booking\"],\"additionalProperties\":false,\"properties\":{\"bookingid\":{\"type\":\"integer\",\"minimum\":1},\"booking\":{\"$ref\":\"#/definitions/booking\"}},\"definitions\":{\"booking\":{\"title\":\"Booking\",\"type\":\"object\",\"required\":[\"firstname\",\"lastname\",\"totalprice\",\"depositpaid\",\"bookingdates\"],\"additionalProperties\":false,\"properties\":{\"firstname\":{\"type\":\"string\",\"minLength\":1},\"lastname\":{\"type\":\"string\",\"minLength\":1},\"totalprice\":{\"type\":\"integer\"},\"depositpaid\":{\"type\":\"boolean\"},\"bookingdates\":{\"type\":\"object\",\"required\":[\"checkin\",\"checkout\"],\"additionalProperties\":false,\"properties\":{\"checkin\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"},\"checkout\":{\"type\":\"string\",\"pattern\":\"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\"}}},\"additionalneeds\":{\"type\":\"string\"}}}}}",
+      "type": "string"
+    },
+    {
+      "key": "bookingIdsSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Booking ID list\",\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"bookingid\"],\"additionalProperties\":false,\"properties\":{\"bookingid\":{\"type\":\"integer\"}}}}",
+      "type": "string"
+    },
+    {
+      "key": "tokenSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Auth token\",\"type\":\"object\",\"required\":[\"token\"],\"additionalProperties\":false,\"properties\":{\"token\":{\"type\":\"string\",\"pattern\":\"^[a-f0-9]{15}$\"}}}",
+      "type": "string"
+    },
+    {
+      "key": "aeProductsSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Automation Exercise product list\",\"type\":\"object\",\"required\":[\"responseCode\",\"products\"],\"properties\":{\"responseCode\":{\"const\":200},\"products\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"type\":\"object\",\"required\":[\"id\",\"name\",\"price\",\"brand\",\"category\"],\"properties\":{\"id\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\",\"minLength\":1},\"price\":{\"type\":\"string\",\"pattern\":\"^Rs\\\\. \\\\d+$\"},\"brand\":{\"type\":\"string\",\"minLength\":1},\"category\":{\"type\":\"object\",\"required\":[\"usertype\",\"category\"],\"properties\":{\"usertype\":{\"type\":\"object\",\"required\":[\"usertype\"]},\"category\":{\"type\":\"string\"}}}}}}}}",
+      "type": "string"
+    },
+    {
+      "key": "aeBrandsSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Automation Exercise brand list\",\"type\":\"object\",\"required\":[\"responseCode\",\"brands\"],\"properties\":{\"responseCode\":{\"const\":200},\"brands\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"type\":\"object\",\"required\":[\"id\",\"brand\"],\"properties\":{\"id\":{\"type\":\"integer\"},\"brand\":{\"type\":\"string\",\"minLength\":1}}}}}}",
+      "type": "string"
+    },
+    {
+      "key": "aeMessageSchema",
+      "value": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Automation Exercise message response\",\"type\":\"object\",\"required\":[\"responseCode\",\"message\"],\"additionalProperties\":false,\"properties\":{\"responseCode\":{\"type\":\"integer\"},\"message\":{\"type\":\"string\",\"minLength\":1}}}",
+      "type": "string"
+    }
+  ]
+}
